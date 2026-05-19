@@ -1,5 +1,15 @@
-from extract_embeddings import get_continuum_embeddings
+import extract_embeddings
 import numpy as np
+
+def main(first_pair, second_pair, model_type='finetuned'):
+    first_pair_embed, second_pair_embed = extract_embeddings.main(first_pair, second_pair, model_type)
+
+    endpoints = get_endpoints(first_pair_embed, second_pair_embed)
+
+    results_first_pair = get_embed_sim(first_pair_embed, endpoints)
+    results_second_pair = get_embed_sim(second_pair_embed, endpoints)
+
+    return results_first_pair, results_second_pair
 
 def get_endpoints(t_embeddings, d_embeddings):
     """
@@ -90,10 +100,4 @@ def get_embed_sim(embed_dict_input, endpoints):
     return similarities
 
 if __name__ == "__main__":
-    dash_tash_embed = get_continuum_embeddings("dash-tash")
-    task_dask_embed = get_continuum_embeddings("task-dask")
-
-    endpoints = get_endpoints(task_dask_embed, dash_tash_embed)
-
-    results_dash_tash = get_embed_sim(dash_tash_embed, endpoints)
-    results_task_dask = get_embed_sim(task_dask_embed, endpoints)
+    main("dash-tash", "task-dask", "finetuned")
