@@ -6,42 +6,73 @@ import torch
 from dotenv import load_dotenv
 from huggingface_hub import login
 from transformers import Wav2Vec2Model, Wav2Vec2Processor
+from transformers import WhisperModel, WhisperProcessor
 
-processor = None
+processors = {}
 models = {}
 
-def main(first_pair, second_pair, model_type='finetuned'):
-    first_pair_embed = get_continuum_embeddings(first_pair, model_type)
-    second_pair_embed = get_continuum_embeddings(second_pair, model_type)
+def main(first_pair, second_pair, model_name):
+    """
+    Extract embeddings for two phonetic continua using a specified ASR model.
+
+    Args:
+        first_pair (str): Name of the first continuum, e.g. 'dash-tash'.
+        second_pair (str): Name of the second continuum, e.g. 'task-dask'.
+        model_name (str): Name of the ASR model.
+            Options:
+                - 'Whisper'
+                - 'wav2vec2_finetuned'
+                - 'wav2vec2_pretrained'
+
+    Returns:
+        first_pair_embed (dict): Nested embedding dictionary for the first
+            continuum in the format:
+            {layer: {step: np.ndarray}}
+
+        second_pair_embed (dict): Nested embedding dictionary for the second
+            continuum in the format:
+            {layer: {step: np.ndarray}}
+    """
+    first_pair_embed = get_continuum_embeddings(first_pair, model_name)
+    second_pair_embed = get_continuum_embeddings(second_pair, model_name)
 
     return first_pair_embed, second_pair_embed
 
 def initialize_models():
     """ Load the models. """
-    global processor, models
+    global processors, models
 
-    if processor is not None and models:
+    if processors and models is not None:
         return
 
     load_dotenv()
     hf_token = os.environ["HF_TOKEN"]
     login(token=hf_token)
 
-    processor = Wav2Vec2Processor.from_pretrained("facebook/wav2vec2-base-960h")
     models = {
-        "finetuned": Wav2Vec2Model.from_pretrained("facebook/wav2vec2-base-960h"),
-        "pretrained": Wav2Vec2Model.from_pretrained("facebook/wav2vec2-base")
+        "wav2vec2_finetuned": Wav2Vec2Model.from_pretrained("facebook/wav2vec2-base-960h"),
+        "wav2vec2_pretrained": Wav2Vec2Model.from_pretrained("facebook/wav2vec2-base"),
+        "Whisper": WhisperModel.from_pretrained("openai/Whisper-small")
     }
 
-def get_continuum_embeddings(continuum_name, model_type='finetuned'):
+    processors = {
+        "wav2vec2_finetuned": Wav2Vec2Processor.from_pretrained("facebook/wav2vec2-base-960h"),
+        "wav2vec2_pretrained": Wav2Vec2Processor.from_pretrained("facebook/wav2vec2-base"),
+        "Whisper": WhisperProcessor.from_pretrained("openai/Whisper-small")
+    }
+
+def get_continuum_embeddings(continuum_name, model_name):
     """
-    Extract mean Wav2Vec2 embeddings from the initial consonant region
+    Extract mean Whisper's encoder or wav2vec2 embeddings from the initial consonant region
     of the continuum.
 
     Args:
         continuum_name (str): Name of the continuum, e.g. 'dash-tash'.
-        model (str): Which Wav2Vec2 version to use. Options include 'finetuned'
-            and 'pretrained'.
+        model_name (str): Name of the ASR model.
+            Options:
+                - 'Whisper'
+                - 'wav2vec2_finetuned'
+                - 'wav2vec2_pretrained'
 
     Returns:
         embed_dict (dict): Nested dictionary of embeddings in the format:
@@ -49,7 +80,7 @@ def get_continuum_embeddings(continuum_name, model_type='finetuned'):
             representing the initial consonant.
     """
     initialize_models()
-    model = models[model_type]
+    model = models[model_name]
     model.eval()
 
     start_frame = int(0.05 / 0.02)
@@ -61,11 +92,15 @@ def get_continuum_embeddings(continuum_name, model_type='finetuned'):
         for i, step in enumerate(steps):
             sound_path = (base_path/continuum_name/f"{continuum_name}_F0_{step}_VOT_{step}.wav")
             sound, sr = librosa.load(sound_path, sr=16000)
-            sound_tensor = processor(sound, sampling_rate=sr, return_tensors='pt')
             # max: prevent an error for the first frame where VOT = 0
             end_frame = max(int((0.05 + i * 0.009) / 0.02), start_frame + 1)
 
-            embeddings = model(**sound_tensor, output_hidden_states=True)
+            if model_name == "Whisper":
+                sound_tensor = processors[model_name](sound, sampling_rate=sr, return_tensors='pt').input_features
+                embeddings = model.encoder(input_features=sound_tensor, output_hidden_states=True)
+            else:
+                sound_tensor = processors[model_name](sound, sampling_rate=sr, return_tensors='pt')
+                embeddings = model(**sound_tensor, output_hidden_states=True)
 
             for layer in range(13):
                 # average frame-level representations across the consonant region
@@ -75,4 +110,4 @@ def get_continuum_embeddings(continuum_name, model_type='finetuned'):
     return embed_dict
 
 if __name__ == "__main__":
-    main("dash-tash", "task-dask", "finetuned")
+    main("dash-tash", "task-dask", "Whisper")

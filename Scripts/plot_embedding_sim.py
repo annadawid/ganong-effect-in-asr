@@ -4,26 +4,63 @@ import matplotlib.pyplot as plt
 import embedding_sim
 import extract_embeddings
 
-def main(first_pair, second_pair, model_type='finetuned'):
-    results_first_pair, results_second_pair = embedding_sim.main(first_pair, second_pair, model_type)
+def main(first_pair, second_pair, model_name):
+    """
+    Execute the complete speech continuum analysis pipeline:
+    extraction of the consonant embeddings, computing embedding similarity
+    relative to /t/, and plotting the results.
 
+    Args:
+        first_pair (str): Name of the first continuum, e.g. 'dash-tash'.
+        second_pair (str): Name of the second continuum, e.g. 'task-dask'.
+        model_name (str): Name of the ASR model.
+            Options:
+                - 'Whisper'
+                - 'wav2vec2_finetuned'
+                - 'wav2vec2_pretrained'
+    """
+    results_first_pair, results_second_pair = embedding_sim.main(first_pair, second_pair, model_name)
     plot_embed_sim(results_first_pair, results_second_pair, pair1_label=first_pair, pair2_label=second_pair)
 
-
 def plot_embed_sim(embed_sim_pair1, embed_sim_pair2, pair1_label, pair2_label):
+    """
+    Generate and save a 13-panel plot comparing layer-wise relative
+    embedding similarities.
+
+    Args:
+        embed_sim_pair1 (dict): Dictionary mapping each layer (13 in total) to a
+            list of 11 float similarity scores for the first pair.
+            Format: {layer: [sim_01, ..., sim_11]}
+        embed_sim_pair2 (dict): Dictionary mapping each layer (13 in total) to a
+            list of 11 float similarity scores for the second pair.
+            Format: {layer: [sim_01, ..., sim_11]}
+        pair1_label (str): String label for the first pair used in the plot legend
+            (e.g., 'dash-tash').
+        pair2_label (str): String label for the second pair used in the plot legend
+            (e.g., 'task-dask').
+
+    """
     sns.set_theme(style="whitegrid")
 
     x = np.arange(1, 12)
     layer_names = ["CNN"] + [f"T{i}" for i in range(1, 13)]
 
     fig, axes = plt.subplots(
-        1, 13,
-        figsize=(22, 3.2),
+        2, 7,
+        figsize=(12, 5),
         sharex=True,
         sharey=True
     )
 
+    axes = axes.flatten()
+
     for layer, ax in enumerate(axes):
+
+        # hide empty final subplot
+        if layer >= len(layer_names):
+            ax.axis("off")
+            continue
+
         sns.lineplot(
             x=x,
             y=embed_sim_pair1[layer],
@@ -44,7 +81,7 @@ def plot_embed_sim(embed_sim_pair1, embed_sim_pair2, pair1_label, pair2_label):
             label=pair2_label
         )
 
-        ax.set_title(layer_names[layer], fontsize=11)
+        ax.set_title(layer_names[layer], fontsize=10)
 
         ax.set_xlim(1, 11)
         ax.set_ylim(0, 1)
@@ -58,11 +95,10 @@ def plot_embed_sim(embed_sim_pair1, embed_sim_pair2, pair1_label, pair2_label):
 
         ax.grid(True, linewidth=0.4)
 
-        # only keep y tick labels on first panel
-        if layer != 0:
+        # remove duplicate y-axis labels
+        if layer % 7 != 0:
             ax.tick_params(labelleft=False)
 
-        # remove repeated legends
         ax.legend().remove()
 
     # shared legend
@@ -74,20 +110,20 @@ def plot_embed_sim(embed_sim_pair1, embed_sim_pair2, pair1_label, pair2_label):
         ncol=2,
         frameon=True,
         fontsize=10,
-        bbox_to_anchor=(0.5, 1.08)
+        bbox_to_anchor=(0.5, 1.02)
     )
 
     # shared axis labels
     fig.text(
         0.5,
-        -0.05,
+        0.02,
         "Continuum step",
         ha="center",
         fontsize=12
     )
 
     fig.text(
-        0,
+        -0.03,
         0.5,
         "Relative /t/ similarity",
         va="center",
@@ -107,4 +143,4 @@ def plot_embed_sim(embed_sim_pair1, embed_sim_pair2, pair1_label, pair2_label):
     plt.show()
 
 if __name__ == "__main__":
-    main("dash-tash", "task-dask", "finetuned")
+    main("dash-tash", "task-dask", model_name="Whisper")

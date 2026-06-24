@@ -1,19 +1,48 @@
 import extract_embeddings
 import numpy as np
+import scipy
+import pandas as pd
 
-def main(first_pair, second_pair, model_type='finetuned'):
-    first_pair_embed, second_pair_embed = extract_embeddings.main(first_pair, second_pair, model_type)
+def main(first_pair, second_pair, model_name):
+    """
+    Run the embedding similarity analysis pipeline for two continua.
+
+    This function extracts embeddings for each continuum, calculates
+    /t/ and /d/ endpoints, computes relative /t/ similarity
+    scores across all layers and continuum steps, saves the results to a CSV
+    file, and returns the similarity scores.
+
+    Args:
+        first_pair (str): Name of the first continuum, e.g. 'dash-tash'.
+        second_pair (str): Name of the second continuum, e.g. 'task-dask'.
+        model_name (str): Name of the ASR model.
+            Options:
+                - 'Whisper'
+                - 'wav2vec2_finetuned'
+                - 'wav2vec2_pretrained'
+
+    Returns:
+            results_first_pair (dict): Dictionary mapping each layer (13 in total) to a
+                list of 11 float similarity scores for the first pair.
+                Format: {layer: [sim_01, ..., sim_11]}
+            results_second_pair (dict):  Dictionary mapping each layer (13 in total) to a
+                list of 11 float similarity scores for the second pair.
+                Format: {layer: [sim_01, ..., sim_11]}
+    """
+    first_pair_embed, second_pair_embed = extract_embeddings.main(first_pair, second_pair, model_name)
 
     endpoints = get_endpoints(first_pair_embed, second_pair_embed)
 
     results_first_pair = get_embed_sim(first_pair_embed, endpoints)
     results_second_pair = get_embed_sim(second_pair_embed, endpoints)
 
+    save_to_csv(results_first_pair, results_second_pair, first_pair, second_pair, model_name)
+
     return results_first_pair, results_second_pair
 
 def get_endpoints(t_embeddings, d_embeddings):
     """
-    Compute mean /t/ and /d/ endpoint representations for each Wav2Vec2 layer.
+    Compute mean /t/ and /d/ endpoint representations for each wav2vec2 layer.
 
     Args:
         t_embeddings (dict): Nested dictionary of embeddings for the /t/-biased continuum.
@@ -99,5 +128,31 @@ def get_embed_sim(embed_dict_input, endpoints):
 
     return similarities
 
+def save_to_csv(results_first_pair, results_second_pair, first_pair, second_pair, model_name):
+    """Save embedding similarity results from two continua to a CSV file."""
+
+    data = []
+
+    for layer in range(13):
+        for idx, val in enumerate(results_first_pair[layer]):
+            data.append({
+                'Layer': layer,
+                'Step': idx,
+                'Model': model_name,
+                'Pair': first_pair,
+                't-similarity': val})
+        for idx2, val2 in enumerate(results_second_pair[layer]):
+            data.append({
+                'Layer': layer,
+                'Step': idx2,
+                'Model': model_name,
+                'Pair': second_pair,
+                't-similarity': val2})
+
+    df = pd.DataFrame(data)
+    df.to_csv(f'{model_name}_embed_data.csv', index=False)
+
 if __name__ == "__main__":
-    main("dash-tash", "task-dask", "finetuned")
+    main("dash-tash", "task-dask", "Whisper")
+    main("dash-tash", "task-dask", "wav2vec2_pretrained")
+    main("dash-tash", "task-dask", "wav2vec2_finetuned")
