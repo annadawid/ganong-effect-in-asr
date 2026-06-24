@@ -1,9 +1,9 @@
 Using Praat version 6.4
-Saving to parent folder C:\Users\HP\OneDrive\Pulpit\OneNote\Thesis
+Saving to parent folder C:\Users\HP\OneDrive\Pulpit\OneNote\Thesis\ganong-effect-in-asr\Stimuli\Continua\
 ###############################################
 SOUND SELECTION INFO
-User selected dake as the voiced endpoint
-User selected take as the voiceless endpoint
+User selected dask as the voiced endpoint
+User selected task as the voiceless endpoint
 
 ###############################################
 ###############################################
@@ -11,12 +11,17 @@ VOT CONTINUUM INFO
 
 ###############################################
 User selections
-Selected an aspiration segment from take sound
-   with onset landmark at 0.6778715277777778
-   and offset landmark at 0.7967368827160494
+Selected an aspiration segment from task sound
+   with onset landmark at 0.3605034905452946
+   and offset landmark at 0.4527817494292238
 
 ###############################################
-Marked 0.5250663343558282 as the vowel onset in the dake sound
+Replicating the last 0.004 at the end of the aspiration segment
+   to support the maximum length of the VOT continuum
+
+
+###############################################
+Marked 0.4803350543478261 as the vowel onset in the dask sound
 
 
 ###############################################
@@ -44,40 +49,40 @@ Maximum vowel cutback duration permitted: 0.7 seconds
 
 
 ###############################################
-Original sound F0 onset: 179.1
-F0 continuum minimum:  174.1
-F0 continuum maximum:  219.1
+Original sound F0 onset: 184.8
+F0 continuum minimum:  179.8
+F0 continuum maximum:  224.8
 Modification declared as relative change from the original
 
 ###############################################
 F0 steps: 
-F0_1	174 
-F0_2	179 
-F0_3	183 
-F0_4	188 
-F0_5	192 
-F0_6	197 
-F0_7	201 
-F0_8	206 
-F0_9	210 
-F0_10	215 
-F0_11	219 
+F0_1	180 
+F0_2	184 
+F0_3	189 
+F0_4	193 
+F0_5	198 
+F0_6	202 
+F0_7	207 
+F0_8	211 
+F0_9	216 
+F0_10	220 
+F0_11	225 
 
 Pitch analysis between 65 and 275 Hz
 
 ###############################################
 Aspiration intensities (dB)
-aspiration_int_1	49.2 
-aspiration_int_2	49.8 
-aspiration_int_3	50.4 
-aspiration_int_4	51 
-aspiration_int_5	51.6 
-aspiration_int_6	52.2 
-aspiration_int_7	52.8 
-aspiration_int_8	53.4 
-aspiration_int_9	54 
-aspiration_int_10	54.6 
-aspiration_int_11	55.2 
+aspiration_int_1	52.6 
+aspiration_int_2	53.2 
+aspiration_int_3	53.8 
+aspiration_int_4	54.4 
+aspiration_int_5	55 
+aspiration_int_6	55.6 
+aspiration_int_7	56.2 
+aspiration_int_8	56.8 
+aspiration_int_9	57.4 
+aspiration_int_10	58 
+aspiration_int_11	58.6 
 
 Aspiration change (dB)
 aspiration_int_change_1	-6 
